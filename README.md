@@ -1,2 +1,4 @@
 # programmable-smart-watch
-The code for the Arduino and the python API featured in the PSW.
+
+A smart watch focused on being simple and programmable.
+The watch as of now is going to be implemented in an ESP-32 controller and it's unique property will be the paper display and therefore, long battery life
