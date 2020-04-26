@@ -1,6 +1,14 @@
 #include "BluetoothSerial.h"
 #include "Arduino_JSON.h"
 #include <RTClib.h>
+#include <SPI.h>
+#include "ER-ERM0154-1.h"
+#include "imagedata.h"
+#include "epdpaint.h"
+#include <Wire.h>
+
+#define COLORED     0
+#define UNCOLORED   1
 
 const int Left = 15;
 const int Right = 17;
@@ -10,21 +18,69 @@ const int Ok = 13;
 #error Bluetooth is not enabled! Please run `make menuconfig` to and enable it
 #endif
 
+TwoWire i2c = TwoWire(0);
+
 BluetoothSerial SerialBT;
 
 JSONVar packet;
 
+int scanDevices(void) {
+  Serial.println("\nI2C Scanner starting");
+  byte error, address;
+  int nDevices;
+  Serial.println("Scanning...");
+  nDevices = 0;
+  for(address = 1; address < 127; address++ ) {
+    i2c.beginTransmission(address);
+    error = i2c.endTransmission();
+    if (error == 0) {
+      Serial.print("I2C device found at address 0x");
+      if (address<16) {
+        Serial.print("0");
+      }
+      Serial.println(address,HEX);
+      nDevices++;
+    }
+    else if (error==4) {
+      Serial.print("Unknow error at address 0x");
+      if (address<16) {
+        Serial.print("0");
+      }
+      Serial.println(address,HEX);
+    }    
+  }
+  if (nDevices == 0) {
+    Serial.println("No I2C devices found\n");
+  }
+  else {
+    Serial.println("done\n");
+  }
+  delay(10000);
+}
+
 void setup() {
+  i2c.begin(12,14);
   pinMode(Left, INPUT);
   pinMode(Ok, INPUT);
   pinMode(Right, INPUT);
   
   Serial.begin(115200);
   SerialBT.begin("PSW"); //Bluetooth device name
-  Serial.println("The device online, standing by...");
+
+  // Display initialisation
+  Epd epd;
+  if (epd.Init() != 0) {
+    Serial.println("e-Paper init failed");
+    return;
+  }
+  epd.ClearFrame();
 }
 
 void loop() {
+  // Searching for screen
+  Serial.println(SDA);
+  Serial.println(SCL);
+  scanDevices();
   // Preparing json packet
   packet["left"] = 0;
   packet["ok"] = 0;
