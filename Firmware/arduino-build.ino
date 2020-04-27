@@ -10,6 +10,9 @@
 #define COLORED     0
 #define UNCOLORED   1
 
+#define I2C_SDA 12
+#define I2C_SCL 14
+
 const int Left = 15;
 const int Right = 17;
 const int Ok = 13;
@@ -17,8 +20,6 @@ const int Ok = 13;
 #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
 #error Bluetooth is not enabled! Please run `make menuconfig` to and enable it
 #endif
-
-TwoWire i2c = TwoWire(0);
 
 BluetoothSerial SerialBT;
 
@@ -31,8 +32,8 @@ int scanDevices(void) {
   Serial.println("Scanning...");
   nDevices = 0;
   for(address = 1; address < 127; address++ ) {
-    i2c.beginTransmission(address);
-    error = i2c.endTransmission();
+    Wire.beginTransmission(address);
+    error = Wire.endTransmission();
     if (error == 0) {
       Serial.print("I2C device found at address 0x");
       if (address<16) {
@@ -55,16 +56,17 @@ int scanDevices(void) {
   else {
     Serial.println("done\n");
   }
-  delay(10000);
+  delay(3000);
 }
 
 void setup() {
-  i2c.begin(12,14);
+  Serial.begin(115200);
+  Wire.begin(I2C_SDA, I2C_SCL, 100000);
+  
   pinMode(Left, INPUT);
   pinMode(Ok, INPUT);
   pinMode(Right, INPUT);
   
-  Serial.begin(115200);
   SerialBT.begin("PSW"); //Bluetooth device name
 
   // Display initialisation
@@ -78,8 +80,8 @@ void setup() {
 
 void loop() {
   // Searching for screen
-  Serial.println(SDA);
-  Serial.println(SCL);
+  Wire.begin(I2C_SDA,I2C_SCL);
+
   scanDevices();
   // Preparing json packet
   packet["left"] = 0;
