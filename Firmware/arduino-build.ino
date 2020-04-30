@@ -10,12 +10,12 @@
 #define COLORED     0
 #define UNCOLORED   1
 
-#define I2C_SDA 12
-#define I2C_SCL 14
-
 const int Left = 15;
 const int Right = 17;
 const int Ok = 13;
+
+// Display initialisation
+Epd epd;
 
 #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
 #error Bluetooth is not enabled! Please run `make menuconfig` to and enable it
@@ -25,43 +25,9 @@ BluetoothSerial SerialBT;
 
 JSONVar packet;
 
-int scanDevices(void) {
-  Serial.println("\nI2C Scanner starting");
-  byte error, address;
-  int nDevices;
-  Serial.println("Scanning...");
-  nDevices = 0;
-  for(address = 1; address < 127; address++ ) {
-    Wire.beginTransmission(address);
-    error = Wire.endTransmission();
-    if (error == 0) {
-      Serial.print("I2C device found at address 0x");
-      if (address<16) {
-        Serial.print("0");
-      }
-      Serial.println(address,HEX);
-      nDevices++;
-    }
-    else if (error==4) {
-      Serial.print("Unknow error at address 0x");
-      if (address<16) {
-        Serial.print("0");
-      }
-      Serial.println(address,HEX);
-    }    
-  }
-  if (nDevices == 0) {
-    Serial.println("No I2C devices found\n");
-  }
-  else {
-    Serial.println("done\n");
-  }
-  delay(3000);
-}
-
 void setup() {
   Serial.begin(115200);
-  Wire.begin(I2C_SDA, I2C_SCL, 100000);
+  // Wire.begin(I2C_SDA, I2C_SCL, 100000);
   
   pinMode(Left, INPUT);
   pinMode(Ok, INPUT);
@@ -69,20 +35,23 @@ void setup() {
   
   SerialBT.begin("PSW"); //Bluetooth device name
 
-  // Display initialisation
-  Epd epd;
   if (epd.Init() != 0) {
     Serial.println("e-Paper init failed");
     return;
+  } else {
+    Serial.println("e-Paper initiated");
   }
   epd.ClearFrame();
+  unsigned char image[1024];
+  Paint paint(image, 152, 18);    //width should be the multiple of 8 
+
+  paint.Clear(UNCOLORED);
+  paint.DrawStringAt(8, 2, "PSW", &Font24, COLORED);
+  epd.SetPartialWindowBlack(paint.GetImage(), 0, 3, paint.GetWidth(), paint.GetHeight());
+  epd.DisplayFrame();
 }
 
 void loop() {
-  // Searching for screen
-  Wire.begin(I2C_SDA,I2C_SCL);
-
-  scanDevices();
   // Preparing json packet
   packet["left"] = 0;
   packet["ok"] = 0;
