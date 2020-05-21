@@ -32,7 +32,7 @@ void display_time() {
   char time_string[25];
   sprintf(time_string,"%d:%d",now.hour(),now.minute());
   epd.ClearFrame();
-  unsigned char image[1024];
+  unsigned char image[1024]; // TODO make sure you can push 23104
   Paint paint(image, 152, 18);    //width should be the multiple of 8 
   paint.Clear(UNCOLORED);
   paint.DrawStringAt(30, 2, time_string, &Font24, COLORED);
