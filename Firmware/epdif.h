@@ -9,10 +9,10 @@ EastRising Technology Co.,LTD
 #include <Arduino.h>
 
 // Pin definition
-#define RST_PIN         8
-#define DC_PIN          9
-#define CS_PIN          10
-#define BUSY_PIN        7
+#define RST_PIN         16
+#define DC_PIN          17
+#define CS_PIN          5
+#define BUSY_PIN        4
 
 class EpdIf {
 public:
