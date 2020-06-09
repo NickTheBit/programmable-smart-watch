@@ -1,12 +1,19 @@
-#include "BluetoothSerial.h"
-#include "Arduino_JSON.h"
-#include <RTClib.h>
+#include <BluetoothSerial.h>
+#include <GxFont_GFX.h>
+#include <ArduinoJson.h>
+
+#include <Fonts/FreeMonoBold9pt7b.h>
+#include <Fonts/FreeMono24pt7b.h>
+
+
+#include <GxEPD.h>
+#include <GxGDEH0154D67/GxGDEH0154D67.h>
+#include <GxIO/GxIO_SPI/GxIO_SPI.h>
+#include <GxIO/GxIO.h>
 #include <SPI.h>
-#include "ER-ERM0154-1.h"
-#include "imagedata.h"
-#include "epdpaint.h"
 #include <Wire.h>
 #include <stdio.h>
+#include <RTClib.h>
 
 #define COLORED     0
 #define UNCOLORED   1
@@ -21,63 +28,57 @@ char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursd
 #error Bluetooth is not enabled! Please run `make menuconfig` to and enable it
 #endif
 
+GxIO_Class io(SPI, SS, 17, /*RST=*/ 16); // arbitrary selection of 17, 16
+GxEPD_Class display(io, /*RST=*/ 16, /*BUSY=*/ 4); // arbitrary selection of (16), 4
+
 BluetoothSerial SerialBT;
-JSONVar packet;
+const int capacity = JSON_OBJECT_SIZE(64);
+StaticJsonDocument <capacity> packet;
+
 RTC_DS3231 rtc;
 DateTime now , prev;
 // Display initialisation
-Epd epd;
 
 void display_time() {
   char time_string[25];
   sprintf(time_string,"%d:%d",now.hour(),now.minute());
-  epd.ClearFrame();
-  unsigned char image[1024]; // TODO make sure you can push 23104
-  Paint paint(image, 152, 18);    //width should be the multiple of 8 
-  paint.Clear(UNCOLORED);
-  paint.DrawStringAt(30, 2, time_string, &Font24, COLORED);
-  epd.SetPartialWindowBlack(paint.GetImage(), 0, 3, paint.GetWidth(), paint.GetHeight());
-  epd.DisplayFrame();
+  display.print(time_string);
+  display.update();
 }
 
 void setup() {
   Serial.begin(115200);
   // Wire.begin(I2C_SDA, I2C_SCL, 100000);
+  Serial.println("setup");
+  display.init(115200); // enable diagnostic output on Serial
+  Serial.println("setup done");
   
   pinMode(Left, INPUT);
   pinMode(Ok, INPUT);
   pinMode(Right, INPUT);
   
   SerialBT.begin("PSW"); //Bluetooth device name
-
-  if (epd.Init() != 0) {
-    Serial.println("e-Paper init failed");
-    return;
-  } else {
-    Serial.println("e-Paper initiated");
-  }
+  
 
   if (! Wire.begin(22,19))
     Serial.println("Wire fucked up");
 
   if (! rtc.begin()) {
     Serial.println("Couldn't find RTC");
-  }
-  //  rtc.adjust(DateTime(2020, 5, 3, 9, 31, 0));
+  } 
 
   if (rtc.lostPower()) {
     Serial.println("RTC lost power, recalibration required");
+    rtc.adjust(DateTime(F(__DATE__),F(__TIME__)));
   }
 
   // Boot screen
-  epd.ClearFrame();
-  unsigned char image[1024];
-  Paint paint(image, 152, 24);    //width should be the multiple of 8 
-  paint.Clear(UNCOLORED);
-  paint.DrawRectangle(1,1,151,23,COLORED);
-  paint.DrawStringAt(50, 3, "PSW", &Font24, COLORED);
-  epd.SetPartialWindowRed(paint.GetImage(), 0, 3, paint.GetWidth(), paint.GetHeight());
-  epd.DisplayFrame();
+  display.fillScreen(GxEPD_WHITE);
+  display.setFont(&FreeMono24pt7b);
+  display.setTextColor(GxEPD_BLACK);
+  display.setRotation(0);
+  display.print("Hello World");
+  display.update();
   now = rtc.now();
   prev = rtc.now();
   display_time();
@@ -126,7 +127,7 @@ void loop() {
   
   delay(300);
   if (update_flag==1) {
-    SerialBT.println(packet);
-    Serial.println(packet);
+//    SerialBT.write(packet);/
+//    Serial.println(packet);
   }
 }
