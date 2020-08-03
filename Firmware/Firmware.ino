@@ -5,7 +5,7 @@
 #include <Fonts/FreeMonoBold9pt7b.h>
 #include <Fonts/FreeMono24pt7b.h>
 
-//NIKOOOO MOY
+//NIKOOOO MOY geiaaaaaaaa
 #include <GxEPD.h>
 #include <GxGDEH0154D67/GxGDEH0154D67.h>
 #include <GxIO/GxIO_SPI/GxIO_SPI.h>
